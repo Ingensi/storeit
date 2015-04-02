@@ -1,4 +1,4 @@
 /**
- * This package contains generic entity definitions.
+ * This package contains entity definitions.
  */
 package com.ingensi.data.storeit.entities;
