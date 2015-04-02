@@ -1,7 +1,7 @@
 package com.ingensi.data.storeit;
 
 /**
- * Top class for Storage package.
+ * Top level exception for {@link Storage}.
  */
 public class StorageException extends Exception {
     public StorageException() {

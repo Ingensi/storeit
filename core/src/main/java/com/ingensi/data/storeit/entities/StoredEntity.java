@@ -3,7 +3,7 @@ package com.ingensi.data.storeit.entities;
 /**
  * Generic stored entity.
  */
-public interface StorableEntity {
+public interface StoredEntity {
     /**
      * Get the entity ID.
      *

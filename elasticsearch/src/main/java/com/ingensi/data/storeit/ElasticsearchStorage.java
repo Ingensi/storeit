@@ -1,6 +1,7 @@
 package com.ingensi.data.storeit;
 
-import com.ingensi.data.storeit.entities.StorableEntity;
+import com.ingensi.data.storeit.entities.StoredEntity;
+import com.ingensi.data.storeit.mapper.GenericMapper;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
@@ -12,43 +13,48 @@ import org.elasticsearch.search.SearchHit;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Elasticsearch storage implementation.
  */
-public class ElasticsearchStorage<T extends StorableEntity> implements Storage<T> {
-    public static final int MAX_SIZE = 100;
+public class ElasticsearchStorage<T extends StoredEntity> implements Storage<T> {
+    public static final int MAX_SIZE = Integer.MAX_VALUE;
 
     private final Client client;
-    private final Builder<T> builder;
+    private final GenericMapper<T> mapper;
     private final String index;
     private final String type;
 
     /**
      * Main elasticsearch storage constructor.
      *
-     * @param client  The Elasticsearch Client, used to access and execute queries on the Elasticsearch cluster.
-     * @param builder Builder defining methods to convert entities from/to elasticsearch.
-     * @param index   Elasticsearch index to use.
-     * @param type    Elasticsearch entity type.
+     * @param client The Elasticsearch Client, used to access and execute queries on the Elasticsearch cluster.
+     * @param mapper Builder defining methods to convert entities from/to elasticsearch.
+     * @param index  Elasticsearch index to use.
+     * @param type   Elasticsearch entity type.
      */
-    public ElasticsearchStorage(Client client, Builder<T> builder, String index, String type) {
+    public ElasticsearchStorage(Client client, GenericMapper<T> mapper, String index, String type) {
         this.client = client;
-        this.builder = builder;
+        this.mapper = mapper;
         this.index = index;
         this.type = type;
     }
 
     @Override
     public Collection<T> list() {
+        return stream().collect(Collectors.toList());
+    }
+
+    @Override
+    public Stream<T> stream() {
         return extractSearchHitsAsList(
                 client.prepareSearch(index)
                         .setTypes(type)
                         .setFrom(0).setSize(MAX_SIZE))
                 .stream()
                 .map(SearchHit::getSource)
-                .map(builder.getFrom()::build)
-                .collect(Collectors.toList());
+                .map(mapper.getFrom()::build);
     }
 
     @Override
@@ -60,16 +66,16 @@ public class ElasticsearchStorage<T extends StorableEntity> implements Storage<T
     }
 
     @Override
-    public void create(T entity) throws StorageException {
-        create(entity, null);
+    public void store(T entity) throws StorageException {
+        store(entity, entity.getId());
     }
 
     @Override
-    public void create(T entity, String id) throws StorageException {
-        if (id == null || !exists(id)) {
+    public void store(T entity, String id) throws StorageException {
+        if (!exists(id)) {
             createOrUpdate(entity, id);
         } else {
-            throw new StorageException("Unable to create entity with id " + id + " (not found)");
+            throw new AlreadyExistsException("Unable to create entity with id " + id + " (already exists)");
         }
     }
 
@@ -80,18 +86,18 @@ public class ElasticsearchStorage<T extends StorableEntity> implements Storage<T
                 .actionGet();
 
         if (!response.isExists()) {
-            throw new StorageException("entity with id " + id + " not found");
+            throw new NotFoundException("entity with id " + id + " not found");
         }
 
-        return builder.getFrom().build(response.getSource());
+        return mapper.getFrom().build(response.getSource());
     }
 
     @Override
-    public void update(T entity, String id) throws StorageException {
-        if (exists(id)) {
-            createOrUpdate(entity, id);
+    public void update(T entity) throws StorageException {
+        if (exists(entity.getId())) {
+            createOrUpdate(entity, entity.getId());
         } else {
-            throw new StorageException("Unable to update entity with id " + id + " (not found)");
+            throw new NotFoundException("Unable to update entity " + entity + " (not found)");
         }
     }
 
@@ -102,7 +108,7 @@ public class ElasticsearchStorage<T extends StorableEntity> implements Storage<T
                 .actionGet();
 
         if (!response.isFound()) {
-            throw new StorageException("Unable to delete entity with id " + id + " (not found)");
+            throw new NotFoundException("Unable to delete entity with id " + id + " (not found)");
         }
     }
 
@@ -114,12 +120,12 @@ public class ElasticsearchStorage<T extends StorableEntity> implements Storage<T
         }
 
         IndexResponse response = requestBuilder
-                .setSource(builder.getTo().build(entity))
+                .setSource(mapper.getTo().build(entity))
                 .execute()
                 .actionGet();
 
         if (!response.isCreated()) {
-            throw new StorageException("Unable to index entity " + entity + " (not created)");
+            throw new InternalStorageException("Unable to index entity " + entity + " (not created)");
         }
     }
 
