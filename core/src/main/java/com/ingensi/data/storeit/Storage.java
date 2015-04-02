@@ -48,7 +48,7 @@ public interface Storage<T extends StoredEntity> {
      *
      * @param entity The entity to store.
      * @param id     ID of the entity.
-     * @throws AlreadyExistsException if ID already exists in the storage.
+     * @throws AlreadyExistsException If ID already exists in the storage.
      * @throws StorageException       When another error appends.
      */
     void store(T entity, String id) throws StorageException;
