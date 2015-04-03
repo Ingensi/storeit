@@ -94,8 +94,13 @@ public class ElasticsearchStorage<T extends StoredEntity> implements Storage<T> 
 
     @Override
     public void update(T entity) throws StorageException {
+        update(entity, entity.getId());
+    }
+
+    @Override
+    public void update(T entity, String id) throws StorageException {
         if (exists(entity.getId())) {
-            createOrUpdate(entity, entity.getId());
+            createOrUpdate(entity, id);
         } else {
             throw new NotFoundException("Unable to update entity " + entity + " (not found)");
         }

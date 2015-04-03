@@ -73,6 +73,16 @@ public interface Storage<T extends StoredEntity> {
     void update(T entity) throws StorageException;
 
     /**
+     * Update an existing entity with custom ID. Matching with existing entity is done from the given entity ID.
+     *
+     * @param entity The entity to update.
+     * @param id     Id of the entity.
+     * @throws NotFoundException If entity is not found into storage.
+     * @throws StorageException  When another error appends.
+     */
+    void update(T entity, String id) throws StorageException;
+
+    /**
      * Delete the entity from its ID.
      *
      * @param id Id of the entity to delete.
