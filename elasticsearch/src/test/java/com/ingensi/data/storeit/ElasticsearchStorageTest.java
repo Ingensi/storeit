@@ -513,6 +513,58 @@ public class ElasticsearchStorageTest {
     }
 
     @Test
+    public void shouldUpdateAnEntityWithCustomId() throws Exception {
+        // GIVEN
+        // a fake index and type names
+        String index = "fakeindex";
+        String type = "faketype";
+        String id = "123456789";
+
+        // INDEX MOCKING: a mocked index response saying that entity indexed
+        IndexResponse indexResponse = mock(IndexResponse.class);
+        when(indexResponse.isCreated()).thenReturn(true);
+
+        // INDEX MOCKING: a mocked index request builder
+        ListenableActionFuture<IndexResponse> indexAction = mock(ListenableActionFuture.class);
+        when(indexAction.actionGet()).thenReturn(indexResponse);
+        IndexRequestBuilder indexReqBuilder = getMockedIndexRequestBuilder();
+        when(indexReqBuilder.execute()).thenReturn(indexAction);
+        when(client.prepareIndex(anyString(), anyString())).thenReturn(indexReqBuilder);
+
+        // when updating an entity, we have to mock the id check part
+        // GET MOCKING:a mocked get response saying that entity exists
+        GetResponse getResponse = mock(GetResponse.class);
+        when(getResponse.isExists()).thenReturn(true);
+
+        // GET MOCKING: a mocked get request builder
+        ListenableActionFuture<GetResponse> getAction = mock(ListenableActionFuture.class);
+        when(getAction.actionGet()).thenReturn(getResponse);
+        GetRequestBuilder getReqBuilder = mock(GetRequestBuilder.class);
+        when(getReqBuilder.execute()).thenReturn(getAction);
+        when(client.prepareGet(anyString(), anyString(), anyString())).thenReturn(getReqBuilder);
+
+        // an elasticsearch storage
+        ElasticsearchStorage<FakeEntity> storage = new ElasticsearchStorage<>(
+                client,
+                mapper,
+                index,
+                type
+        );
+
+        // an entity
+        FakeEntity entity = new FakeEntity("123456789");
+
+        // WHEN
+        storage.update(entity, id);
+
+        // THEN
+        verify(client, times(1)).prepareIndex(index, type);
+        verify(indexReqBuilder, times(1)).setId(id);
+        verify(indexReqBuilder, times(1)).setSource(mapper.getTo().build(entity));
+        verify(indexReqBuilder, times(1)).execute();
+    }
+
+    @Test
     public void shouldThrowANotFoundExceptionWhenUpdatingAnEntityWithUnknownId() throws Exception {
         // GIVEN
         // a fake index and type names
