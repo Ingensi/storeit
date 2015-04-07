@@ -1,6 +1,6 @@
 # StoreIt
 
-Very light package used to store entities to various storage.
+Light Java library used to store entities to various storage.
 
 ## How to use!
 
@@ -25,7 +25,7 @@ Add dependency in your `pom.xml` according to the storage your want to use:
 <dependency>
     <groupId>com.ingensi.data</groupId>
     <artifactId>storeit-elasticsearch</artifactId>
-    <version>{{version}}</version>
+    <version>${storeit.version}</version>
 </dependency>
 ```
 

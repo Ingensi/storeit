@@ -14,7 +14,7 @@
     <artifactId>storeit</artifactId>
     <version>1.0.2-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <description>Very light package used to store entities to various storage</description>
+    <description>Light package used to store entities to various storage</description>
     <url>http://storeit.cyres.ninja</url>
 
     <issueManagement>
@@ -67,9 +67,11 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${version.plugin.maven-compiler-plugin}</version>
                 <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
                     <encoding>${source.encoding}</encoding>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <testSource>1.8</testSource>
+                    <testTarget>1.8</testTarget>
                 </configuration>
             </plugin>
             <plugin>
@@ -79,6 +81,19 @@
                 <configuration>
                     <encoding>${source.encoding}</encoding>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${version.plugin.maven-javadoc-plugin}</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -120,19 +135,6 @@
                                 <id>attach-sources</id>
                                 <goals>
                                     <goal>jar-no-fork</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>${version.plugin.maven-javadoc-plugin}</version>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
                                 </goals>
                             </execution>
                         </executions>
