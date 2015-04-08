@@ -12,7 +12,7 @@
 
     <groupId>com.ingensi.data</groupId>
     <artifactId>storeit</artifactId>
-    <version>1.0.2-SNAPSHOT</version>
+    <version>1.0.2</version>
     <packaging>pom</packaging>
     <description>Light package used to store entities to various storage</description>
     <url>http://storeit.ingensi.ninja</url>
