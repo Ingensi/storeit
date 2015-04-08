@@ -13,7 +13,7 @@ To allow an entity to be stored into a StoreIt storage, it has to implement `Sto
 
 Form the root package, install StoredIt locally:
 
-```
+```shell
 mvn install
 ```
 
@@ -21,7 +21,7 @@ mvn install
 
 Add dependency in your `pom.xml` according to the storage your want to use:
 
-```
+```xml
 <dependency>
     <groupId>com.ingensi.data</groupId>
     <artifactId>storeit-elasticsearch</artifactId>
@@ -33,7 +33,7 @@ Add dependency in your `pom.xml` according to the storage your want to use:
 
 To store an entity with `StoreIt`, you need a `StoredEntity` class. Here is an example with a `User` class:
 
-```
+```java
 public class User implements StoredEntity {
     private final String username;
     private final String firstname;
@@ -67,7 +67,7 @@ public class User implements StoredEntity {
 
 Then you are able to create, get, list, update or delete User into various storage by instantiating a `Storage<User>`:
 
-```
+```java
 Storage<User> storage = new xxxStorage<>(
     // DEPENDS ON THE STORAGE IMPLEMENTATION
 );

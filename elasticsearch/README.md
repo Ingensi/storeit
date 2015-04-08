@@ -16,7 +16,7 @@ Here is a concrete example with the following parameters:
 * elasticsearch index "app",
 * elasticsearch type "user",
 
-```
+```java
 Client client = new TransportClient().addTransportAddress(new InetSocketTransportAddress("localhost", 9300));
 Storage<User> storage = new ElasticsearchStorage<>(
     client, 
