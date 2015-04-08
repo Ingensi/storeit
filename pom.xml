@@ -55,7 +55,6 @@
         <version.plugin.maven-resources-plugin>2.4.3</version.plugin.maven-resources-plugin>
         <version.plugin.maven-source-plugin>2.2.1</version.plugin.maven-source-plugin>
         <version.plugin.maven-javadoc-plugin>2.9.1</version.plugin.maven-javadoc-plugin>
-        <version.plugin.nexus-staging-maven-plugin>1.6.5</version.plugin.nexus-staging-maven-plugin>
         <version.plugin.maven-gpg-plugin>1.5</version.plugin.maven-gpg-plugin>
         <source.encoding>UTF-8</source.encoding>
     </properties>
@@ -115,17 +114,6 @@
 
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>${version.plugin.nexus-staging-maven-plugin}</version>
-                        <extensions>true</extensions>
-                        <configuration>
-                            <serverId>ossrh</serverId>
-                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                        </configuration>
-                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
