@@ -14,6 +14,7 @@
     <artifactId>storeit</artifactId>
     <version>1.0.2</version>
     <packaging>pom</packaging>
+    <name>${project.groupId}:${project.artifactId}</name>
     <description>Light package used to store entities to various storage</description>
     <url>http://storeit.ingensi.ninja</url>
 
