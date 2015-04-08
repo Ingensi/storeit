@@ -28,6 +28,10 @@ import java.util.Map;
  * As data handled by a storage are formatted as key/values (Map), from and to methods will define mapping from an
  * entity to a map, and from a map to an entity.
  * </p>
+ * <p>
+ * To learn more about {@link FunctionalInterface} see
+ * <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/FunctionalInterface.html">Java SE8 API doc</a>.
+ * </p>
  *
  * @param <T> Type of entity to map with storage.
  */
