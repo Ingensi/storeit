@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2015 Ingensi, Cyres group.
+ *
+ * See the LICENSE file for copying permission.
+ */
+
 /**
  * Root package for StoreIt classes.
  * <p>

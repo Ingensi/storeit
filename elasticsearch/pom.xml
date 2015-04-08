@@ -1,23 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2015 Ingensi, Cyres group.
+  ~
+  ~ See the LICENSE file for copying permission.
+  -->
+
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>storeit-elasticsearch</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
+    <packaging>jar</packaging>
 
     <parent>
         <groupId>com.ingensi.data</groupId>
         <artifactId>storeit</artifactId>
-        <version>1.0.1</version>
+        <version>1.0.2</version>
     </parent>
 
     <dependencies>
         <dependency>
             <groupId>com.ingensi.data</groupId>
             <artifactId>storeit-core</artifactId>
-            <version>1.0.1</version>
+            <version>1.0.2</version>
         </dependency>
 
         <dependency>
@@ -47,20 +54,4 @@
             <version>1.4</version>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.3</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                    <testSource>1.8</testSource>
-                    <testTarget>1.8</testTarget>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 </project>

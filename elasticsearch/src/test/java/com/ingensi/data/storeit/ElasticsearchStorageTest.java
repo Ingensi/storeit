@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2015 Ingensi, Cyres group.
+ *
+ * See the LICENSE file for copying permission.
+ */
+
 package com.ingensi.data.storeit;
 
 import com.google.common.base.Objects;
@@ -26,9 +32,7 @@ import java.util.stream.Stream;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.fest.assertions.Fail.fail;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyMapOf;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
 /**

@@ -11,12 +11,12 @@ Read the main README to build and install maven artifacts.
 Here is a concrete example with the following parameters:
 
 * the common elasticsearch client,
-* a `GenericMapper` with `from` and `to` methods defined though lambdas. These methods define how to store and retrieve 
+* a `GenericMapper` with `from` and `to` methods defined with lambdas. These methods define how to store and retrieve 
 (from/to key/value map) data from and to elasticsearch,
 * elasticsearch index "app",
 * elasticsearch type "user",
 
-```
+```java
 Client client = new TransportClient().addTransportAddress(new InetSocketTransportAddress("localhost", 9300));
 Storage<User> storage = new ElasticsearchStorage<>(
     client, 
