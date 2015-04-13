@@ -486,7 +486,7 @@ public class ElasticsearchStorageTest {
         // when updating an entity, we have to mock the id check part
         // GET MOCKING:a mocked get response saying that entity exists
         GetResponse getResponse = mock(GetResponse.class);
-        when(getResponse.isExists()).thenReturn(true);
+        when(getResponse.isExists()).thenReturn(false);
 
         // GET MOCKING: a mocked get request builder
         ListenableActionFuture<GetResponse> getAction = mock(ListenableActionFuture.class);
@@ -494,6 +494,20 @@ public class ElasticsearchStorageTest {
         GetRequestBuilder getReqBuilder = mock(GetRequestBuilder.class);
         when(getReqBuilder.execute()).thenReturn(getAction);
         when(client.prepareGet(anyString(), anyString(), anyString())).thenReturn(getReqBuilder);
+
+        // when updating an entity, we have to mock the delete part
+        // DELETE MOCKING: a mocked delete response saying that entity has been deleted
+        DeleteResponse response = mock(DeleteResponse.class);
+        when(response.isFound()).thenReturn(true);
+
+        // DELETE MOCKING: a mocked delete request builder
+        ListenableActionFuture<DeleteResponse> action = mock(ListenableActionFuture.class);
+        when(action.actionGet()).thenReturn(response);
+        DeleteRequestBuilder deleteReqBuilder = mock(DeleteRequestBuilder.class);
+        when(deleteReqBuilder.execute()).thenReturn(action);
+
+        // a mocked elasticsearch client
+        when(client.prepareDelete(anyString(), anyString(), anyString())).thenReturn(deleteReqBuilder);
 
         // an elasticsearch storage
         ElasticsearchStorage<FakeEntity> storage = new ElasticsearchStorage<>(
@@ -510,6 +524,8 @@ public class ElasticsearchStorageTest {
         storage.update(entity);
 
         // THEN
+        verify(client, times(1)).prepareDelete(index, type, entity.getId());
+        verify(deleteReqBuilder, times(1)).execute();
         verify(client, times(1)).prepareIndex(index, type);
         verify(indexReqBuilder, times(1)).setId(entity.getId());
         verify(indexReqBuilder, times(1)).setSource(mapper.getTo().build(entity));
@@ -536,9 +552,9 @@ public class ElasticsearchStorageTest {
         when(client.prepareIndex(anyString(), anyString())).thenReturn(indexReqBuilder);
 
         // when updating an entity, we have to mock the id check part
-        // GET MOCKING:a mocked get response saying that entity exists
+        // GET MOCKING:a mocked get response saying that entity does not exists
         GetResponse getResponse = mock(GetResponse.class);
-        when(getResponse.isExists()).thenReturn(true);
+        when(getResponse.isExists()).thenReturn(false);
 
         // GET MOCKING: a mocked get request builder
         ListenableActionFuture<GetResponse> getAction = mock(ListenableActionFuture.class);
@@ -546,6 +562,18 @@ public class ElasticsearchStorageTest {
         GetRequestBuilder getReqBuilder = mock(GetRequestBuilder.class);
         when(getReqBuilder.execute()).thenReturn(getAction);
         when(client.prepareGet(anyString(), anyString(), anyString())).thenReturn(getReqBuilder);
+
+        // when updating an entity, we have to mock the delete part
+        // DELETE MOCKING: a mocked delete response saying that entity has been deleted
+        DeleteResponse response = mock(DeleteResponse.class);
+        when(response.isFound()).thenReturn(true);
+
+        // DELETE MOCKING: a mocked delete request builder
+        ListenableActionFuture<DeleteResponse> action = mock(ListenableActionFuture.class);
+        when(action.actionGet()).thenReturn(response);
+        DeleteRequestBuilder deleteReqBuilder = mock(DeleteRequestBuilder.class);
+        when(deleteReqBuilder.execute()).thenReturn(action);
+        when(client.prepareDelete(anyString(), anyString(), anyString())).thenReturn(deleteReqBuilder);
 
         // an elasticsearch storage
         ElasticsearchStorage<FakeEntity> storage = new ElasticsearchStorage<>(
@@ -562,6 +590,8 @@ public class ElasticsearchStorageTest {
         storage.update(entity, id);
 
         // THEN
+        verify(client, times(1)).prepareDelete(index, type, id);
+        verify(deleteReqBuilder, times(1)).execute();
         verify(client, times(1)).prepareIndex(index, type);
         verify(indexReqBuilder, times(1)).setId(id);
         verify(indexReqBuilder, times(1)).setSource(mapper.getTo().build(entity));
@@ -575,16 +605,16 @@ public class ElasticsearchStorageTest {
         String index = "fakeindex";
         String type = "faketype";
 
-        // GET MOCKING:a mocked get response saying that entity does not exist
-        GetResponse getResponse = mock(GetResponse.class);
-        when(getResponse.isExists()).thenReturn(false);
+        // DELETE MOCKING: a mocked delete response saying that entity does not exist
+        DeleteResponse deleteResponse = mock(DeleteResponse.class);
+        when(deleteResponse.isFound()).thenReturn(false);
 
-        // GET MOCKING: a mocked get request builder
-        ListenableActionFuture<GetResponse> getAction = mock(ListenableActionFuture.class);
-        when(getAction.actionGet()).thenReturn(getResponse);
-        GetRequestBuilder getReqBuilder = mock(GetRequestBuilder.class);
-        when(getReqBuilder.execute()).thenReturn(getAction);
-        when(client.prepareGet(anyString(), anyString(), anyString())).thenReturn(getReqBuilder);
+        // DELETE MOCKING: a mocked delete request builder
+        ListenableActionFuture<DeleteResponse> deleteAction = mock(ListenableActionFuture.class);
+        when(deleteAction.actionGet()).thenReturn(deleteResponse);
+        DeleteRequestBuilder deleteReqBuilder = mock(DeleteRequestBuilder.class);
+        when(deleteReqBuilder.execute()).thenReturn(deleteAction);
+        when(client.prepareDelete(anyString(), anyString(), anyString())).thenReturn(deleteReqBuilder);
 
         // an elasticsearch storage
         ElasticsearchStorage<FakeEntity> storage = new ElasticsearchStorage<>(
@@ -603,8 +633,8 @@ public class ElasticsearchStorageTest {
             throw fail("should throw a NotFoundException");
         } catch (NotFoundException e) {
             // THEN
-            verify(client, times(1)).prepareGet(index, type, entity.getId());
-            verify(getReqBuilder, times(1)).execute();
+            verify(client, times(1)).prepareDelete(index, type, entity.getId());
+            verify(deleteReqBuilder, times(1)).execute();
         }
     }
 

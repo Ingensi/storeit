@@ -13,6 +13,7 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.search.SearchHit;
 
@@ -79,7 +80,20 @@ public class ElasticsearchStorage<T extends StoredEntity> implements Storage<T> 
     @Override
     public void store(T entity, String id) throws StorageException {
         if (!exists(id)) {
-            createOrUpdate(entity, id);
+            IndexRequestBuilder requestBuilder = client.prepareIndex(index, type);
+
+            if (id != null) {
+                requestBuilder.setId(id);
+            }
+
+            IndexResponse response = requestBuilder
+                    .setSource(mapper.getTo().build(entity))
+                    .execute()
+                    .actionGet();
+
+            if (!response.isCreated()) {
+                throw new InternalStorageException("Unable to index entity " + entity + " (not created)");
+            }
         } else {
             throw new AlreadyExistsException("Unable to create entity with id " + id + " (already exists)");
         }
@@ -105,10 +119,11 @@ public class ElasticsearchStorage<T extends StoredEntity> implements Storage<T> 
 
     @Override
     public void update(T entity, String id) throws StorageException {
-        if (exists(entity.getId())) {
-            createOrUpdate(entity, id);
-        } else {
-            throw new NotFoundException("Unable to update entity " + entity + " (not found)");
+        try {
+            delete(id);
+            store(entity, id);
+        } catch (NotFoundException e) {
+            throw new NotFoundException("Unable to update entity " + entity + " (not found)", e);
         }
     }
 
@@ -120,23 +135,6 @@ public class ElasticsearchStorage<T extends StoredEntity> implements Storage<T> 
 
         if (!response.isFound()) {
             throw new NotFoundException("Unable to delete entity with id " + id + " (not found)");
-        }
-    }
-
-    private void createOrUpdate(T entity, String id) throws StorageException {
-        IndexRequestBuilder requestBuilder = client.prepareIndex(index, type);
-
-        if (id != null) {
-            requestBuilder.setId(id);
-        }
-
-        IndexResponse response = requestBuilder
-                .setSource(mapper.getTo().build(entity))
-                .execute()
-                .actionGet();
-
-        if (!response.isCreated()) {
-            throw new InternalStorageException("Unable to index entity " + entity + " (not created)");
         }
     }
 
