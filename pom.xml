@@ -12,7 +12,7 @@
 
     <groupId>com.ingensi.data</groupId>
     <artifactId>storeit</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>${project.groupId}:${project.artifactId}</name>
     <description>Light package used to store entities to various storage</description>
