@@ -74,6 +74,17 @@ Storage<User> storage = new xxxStorage<>(
 
 // store new user
 storage.store(new User("fbar", "foo", "bar"));
+// store multiple user
+List<User> users = new ArrayList();
+users.add(new User("fbar2", "foo2", "bar2");
+users.add(new User("fbar3", "foo3", "bar3");
+storage.bulk(users);
+// store multiple user with custom ID
+Map<User> users = new HashMap();
+users.put("id2", new User("fbar2", "foo2", "bar2");
+users.add("id3", new User("fbar3", "foo3", "bar3");
+storage.bulk(users);
+
 // list all users
 Collection<User> users = storage.list();
 // update user
