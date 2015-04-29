@@ -9,6 +9,8 @@ package com.ingensi.data.storeit;
 import com.ingensi.data.storeit.entities.StoredEntity;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 /**
@@ -50,6 +52,15 @@ public interface Storage<T extends StoredEntity> {
     void store(T entity) throws StorageException;
 
     /**
+     * Bulk store new entities. The given entities ids will be used as IDs in the storage.
+     *
+     * @param entityList The list of entities to store
+     * @throws AlreadyExistsException If an ID already exists in the storage.
+     * @throws StorageException       When another error appends.
+     */
+    void bulk(List<T> entityList) throws StorageException;
+
+    /**
      * Store new entity with custom id.
      *
      * @param entity The entity to store.
@@ -58,6 +69,15 @@ public interface Storage<T extends StoredEntity> {
      * @throws StorageException       When another error appends.
      */
     void store(T entity, String id) throws StorageException;
+
+    /**
+     * Bulk store new entities with custom id.
+     *
+     * @param entities The map of ID/entities to store
+     * @throws AlreadyExistsException If an ID already exists in the storage.
+     * @throws StorageException       When another error appends.
+     */
+    void bulk(Map<String, T> entities) throws StorageException;
 
     /**
      * Get an entity from its ID.
