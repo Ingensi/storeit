@@ -8,6 +8,8 @@ package com.ingensi.data.storeit;
 
 import com.ingensi.data.storeit.entities.StoredEntity;
 import com.ingensi.data.storeit.mapper.GenericMapper;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
@@ -16,8 +18,7 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.search.SearchHit;
 
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -77,12 +78,44 @@ public class ElasticsearchStorage<T extends StoredEntity> implements Storage<T> 
     }
 
     @Override
+    public void bulk(List<T> entityList) throws StorageException {
+        Map<String, T> entities = new HashMap<>();
+        for (T t : entityList) {
+            entities.put(t.getId(), t);
+        }
+        bulk(entities);
+    }
+
+    @Override
     public void store(T entity, String id) throws StorageException {
         if (!exists(id)) {
-            createOrUpdate(entity, id);
+            IndexRequestBuilder requestBuilder = client.prepareIndex(index, type);
+
+            if (id != null) {
+                requestBuilder.setId(id);
+            }
+
+            IndexResponse response = requestBuilder
+                    .setSource(mapper.getTo().build(entity))
+                    .execute()
+                    .actionGet();
+
+            if (!response.isCreated()) {
+                throw new InternalStorageException("Unable to index entity " + entity + " (not created)");
+            }
         } else {
             throw new AlreadyExistsException("Unable to create entity with id " + id + " (already exists)");
         }
+    }
+
+    @Override
+    public void bulk(Map<String, T> entities) throws StorageException {
+        for (String id : entities.keySet()) {
+            if (exists(id)) {
+                throw new AlreadyExistsException("Unable to create entity with id " + id + " (already exists)");
+            }
+        }
+        bulkCreateOrUpdate(entities);
     }
 
     @Override
@@ -105,10 +138,11 @@ public class ElasticsearchStorage<T extends StoredEntity> implements Storage<T> 
 
     @Override
     public void update(T entity, String id) throws StorageException {
-        if (exists(entity.getId())) {
-            createOrUpdate(entity, id);
-        } else {
-            throw new NotFoundException("Unable to update entity " + entity + " (not found)");
+        try {
+            delete(id);
+            store(entity, id);
+        } catch (NotFoundException e) {
+            throw new NotFoundException("Unable to update entity " + entity + " (not found)", e);
         }
     }
 
@@ -123,20 +157,26 @@ public class ElasticsearchStorage<T extends StoredEntity> implements Storage<T> 
         }
     }
 
-    private void createOrUpdate(T entity, String id) throws StorageException {
-        IndexRequestBuilder requestBuilder = client.prepareIndex(index, type);
+    private void bulkCreateOrUpdate(Map<String, T> entities) throws StorageException {
+        BulkRequestBuilder bulkRequest = client.prepareBulk();
 
-        if (id != null) {
-            requestBuilder.setId(id);
+        for (Map.Entry<String, T> entry : entities.entrySet()) {
+            String id = entry.getKey();
+            T entity = entry.getValue();
+
+            IndexRequestBuilder requestBuilder = client.prepareIndex(index, type);
+
+            if (id != null) {
+                requestBuilder.setId(id);
+            }
+            requestBuilder.setSource(mapper.getTo().build(entity));
+            bulkRequest.add(requestBuilder);
+
         }
 
-        IndexResponse response = requestBuilder
-                .setSource(mapper.getTo().build(entity))
-                .execute()
-                .actionGet();
-
-        if (!response.isCreated()) {
-            throw new InternalStorageException("Unable to index entity " + entity + " (not created)");
+        BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+        if (bulkResponse.hasFailures()) {
+            throw new InternalStorageException("Problem while bulk insert : " + bulkResponse.buildFailureMessage());
         }
     }
 

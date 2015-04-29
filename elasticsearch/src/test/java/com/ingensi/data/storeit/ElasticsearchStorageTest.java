@@ -7,11 +7,14 @@
 package com.ingensi.data.storeit;
 
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.ingensi.data.storeit.entities.StoredEntity;
 import com.ingensi.data.storeit.mapper.GenericMapper;
 import org.elasticsearch.action.ListenableActionFuture;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetRequestBuilder;
@@ -388,6 +391,271 @@ public class ElasticsearchStorageTest {
     }
 
     @Test
+    public void shouldBulkStoreAnEntity() throws Exception {
+        // GIVEN
+        // a fake index and type names
+        String index = "fakeindex";
+        String type = "fwhen(mapper.getTo())aketype";
+
+        // A fake response for exist test
+        GetRequestBuilder getReqBuilder = mock(GetRequestBuilder.class);
+        when(client.prepareGet(anyString(), anyString(), anyString())).thenReturn(getReqBuilder);
+
+        ListenableActionFuture<GetResponse> getAction = mock(ListenableActionFuture.class);
+        when(getReqBuilder.execute()).thenReturn(getAction);
+
+        GetResponse getResponse = mock(GetResponse.class);
+        when(getAction.actionGet()).thenReturn(getResponse);
+
+        when(getResponse.isExists()).thenReturn(false);
+
+
+        // A fake bulkRequestBuilder
+        BulkRequestBuilder bulkReqBuilder = mock(BulkRequestBuilder.class);
+        when(client.prepareBulk()).thenReturn(bulkReqBuilder);
+
+        ListenableActionFuture<BulkResponse> action = mock(ListenableActionFuture.class);
+        when(bulkReqBuilder.execute()).thenReturn(action);
+
+        // A response when execute the bulkRequestBuilder
+        BulkResponse bulkResponse = mock(BulkResponse.class);
+        when(action.actionGet()).thenReturn(bulkResponse);
+        when(bulkResponse.hasFailures()).thenReturn(false);
+
+        // Fake IndexRequestBuilder to insert into the bulkRequestBuilder
+        IndexRequestBuilder indexReqBuilder1 = mock(IndexRequestBuilder.class);
+        IndexRequestBuilder indexReqBuilder2 = mock(IndexRequestBuilder.class);
+        when(client.prepareIndex(index, type)).thenReturn(indexReqBuilder1, indexReqBuilder2);
+
+
+        // an elasticsearch storage
+        ElasticsearchStorage<FakeEntity> storage = new ElasticsearchStorage<>(
+                client,
+                mapper,
+                index,
+                type
+        );
+
+        // Entities
+        FakeEntity entity1 = new FakeEntity("123456789");
+        FakeEntity entity2 = new FakeEntity("987654321");
+
+
+        // WHEN
+        storage.bulk(ImmutableList.of(entity1, entity2));
+
+        // THEN
+        verify(client, times(2)).prepareIndex(index, type);
+
+        verify(indexReqBuilder1, times(1)).setId(entity1.getId());
+        verify(indexReqBuilder2, times(1)).setId(entity2.getId());
+        verify(indexReqBuilder1, times(1)).setSource(mapper.getTo().build(entity1));
+        verify(indexReqBuilder2, times(1)).setSource(mapper.getTo().build(entity2));
+        verify(indexReqBuilder1, times(0)).execute();
+        verify(indexReqBuilder2, times(0)).execute();
+
+        verify(bulkReqBuilder, times(1)).add(indexReqBuilder1);
+        verify(bulkReqBuilder, times(1)).add(indexReqBuilder2);
+        verify(bulkReqBuilder, times(1)).execute();
+    }
+
+    @Test
+    public void shouldBulkStoreAnEntityWithCustomId() throws Exception {
+        // GIVEN
+        // a fake index and type names
+        String index = "fakeindex";
+        String type = "fwhen(mapper.getTo())aketype";
+
+        // A fake response for exist test
+        GetRequestBuilder getReqBuilder = mock(GetRequestBuilder.class);
+        when(client.prepareGet(anyString(), anyString(), anyString())).thenReturn(getReqBuilder);
+
+        ListenableActionFuture<GetResponse> getAction = mock(ListenableActionFuture.class);
+        when(getReqBuilder.execute()).thenReturn(getAction);
+
+        GetResponse getResponse = mock(GetResponse.class);
+        when(getAction.actionGet()).thenReturn(getResponse);
+
+        when(getResponse.isExists()).thenReturn(false);
+
+        // A fake bulkRequestBuilder
+        BulkRequestBuilder bulkReqBuilder = mock(BulkRequestBuilder.class);
+        when(client.prepareBulk()).thenReturn(bulkReqBuilder);
+
+        ListenableActionFuture<BulkResponse> action = mock(ListenableActionFuture.class);
+        when(bulkReqBuilder.execute()).thenReturn(action);
+
+        // A response when execute the bulkRequestBuilder
+        BulkResponse bulkResponse = mock(BulkResponse.class);
+        when(action.actionGet()).thenReturn(bulkResponse);
+        when(bulkResponse.hasFailures()).thenReturn(false);
+
+        // Fake IndexRequestBuilder to insert into the bulkRequestBuilder
+        IndexRequestBuilder indexReqBuilder1 = mock(IndexRequestBuilder.class);
+        IndexRequestBuilder indexReqBuilder2 = mock(IndexRequestBuilder.class);
+        when(client.prepareIndex(index, type)).thenReturn(indexReqBuilder1, indexReqBuilder2);
+
+        // an elasticsearch storage
+        ElasticsearchStorage<FakeEntity> storage = new ElasticsearchStorage<>(
+                client,
+                mapper,
+                index,
+                type
+        );
+
+        // Entities
+        FakeEntity entity1 = new FakeEntity("123456789");
+        FakeEntity entity2 = new FakeEntity("987654321");
+
+
+        // WHEN
+        String id1 = "id1";
+        String id2 = "id2";
+        storage.bulk(ImmutableMap.of(id1, entity1, id2, entity2));
+
+        // THEN
+        verify(client, times(2)).prepareIndex(index, type);
+
+        verify(indexReqBuilder1, times(1)).setId(id1);
+        verify(indexReqBuilder2, times(1)).setId(id2);
+        verify(indexReqBuilder1, times(1)).setSource(mapper.getTo().build(entity1));
+        verify(indexReqBuilder2, times(1)).setSource(mapper.getTo().build(entity2));
+        verify(indexReqBuilder1, times(0)).execute();
+        verify(indexReqBuilder2, times(0)).execute();
+
+        verify(bulkReqBuilder, times(1)).add(indexReqBuilder1);
+        verify(bulkReqBuilder, times(1)).add(indexReqBuilder2);
+        verify(bulkReqBuilder, times(1)).execute();
+    }
+
+    @Test
+    public void shouldThrowAnAlreadyExistsExceptionWhenCreatingBulkEntitiesWithCustomIdButItAlreadyExists() throws Exception {
+        // GIVEN
+        // a fake index and type names
+        String index = "fakeindex";
+        String type = "faketype";
+
+        // A fake response for exist test
+        GetRequestBuilder getReqBuilder = mock(GetRequestBuilder.class);
+        when(client.prepareGet(anyString(), anyString(), anyString())).thenReturn(getReqBuilder);
+
+        ListenableActionFuture<GetResponse> getAction = mock(ListenableActionFuture.class);
+        when(getReqBuilder.execute()).thenReturn(getAction);
+
+        GetResponse getResponseTrue = mock(GetResponse.class);
+        GetResponse getResponseFalse = mock(GetResponse.class);
+        when(getAction.actionGet()).thenReturn(getResponseFalse, getResponseTrue);
+
+        when(getResponseTrue.isExists()).thenReturn(true);
+        when(getResponseFalse.isExists()).thenReturn(false);
+
+
+
+        // an elasticsearch storage
+        ElasticsearchStorage<FakeEntity> storage = new ElasticsearchStorage<>(
+                client,
+                mapper,
+                index,
+                type
+        );
+
+        // Entities
+        FakeEntity entity1 = new FakeEntity("123456789");
+        FakeEntity entity2 = new FakeEntity("987654321");
+
+
+        // WHEN
+        String id1 = "id1";
+        String id2 = "id2";
+
+        try {
+            // WHEN
+            storage.bulk(ImmutableMap.of(id1, entity1, id2, entity2));
+            throw fail("should throw a AlreadyExistsException");
+        } catch (AlreadyExistsException e) {
+            // THEN
+            verify(client, times(1)).prepareGet(index, type, id2);
+            verify(getReqBuilder, times(2)).execute();
+        }
+    }
+
+    @Test
+    public void shouldThrowAnInternalStorageExceptionWhenBulkEntitiesCreationFails() throws Exception {
+        // GIVEN
+        // a fake index and type names
+        String index = "fakeindex";
+        String type = "fwhen(mapper.getTo())aketype";
+
+        // A fake response for exist test
+        GetRequestBuilder getReqBuilder = mock(GetRequestBuilder.class);
+        when(client.prepareGet(anyString(), anyString(), anyString())).thenReturn(getReqBuilder);
+
+        ListenableActionFuture<GetResponse> getAction = mock(ListenableActionFuture.class);
+        when(getReqBuilder.execute()).thenReturn(getAction);
+
+        GetResponse getResponse = mock(GetResponse.class);
+        when(getAction.actionGet()).thenReturn(getResponse);
+
+        when(getResponse.isExists()).thenReturn(false);
+
+
+        // A fake bulkRequestBuilder
+        BulkRequestBuilder bulkReqBuilder = mock(BulkRequestBuilder.class);
+        when(client.prepareBulk()).thenReturn(bulkReqBuilder);
+
+        ListenableActionFuture<BulkResponse> action = mock(ListenableActionFuture.class);
+        when(bulkReqBuilder.execute()).thenReturn(action);
+
+
+        // A response when execute the bulkRequestBuilder
+        BulkResponse bulkResponse = mock(BulkResponse.class);
+        when(action.actionGet()).thenReturn(bulkResponse);
+        when(bulkResponse.hasFailures()).thenReturn(true);
+
+        // Fake IndexRequestBuilder to insert into the bulkRequestBuilder
+        IndexRequestBuilder indexReqBuilder1 = mock(IndexRequestBuilder.class);
+        IndexRequestBuilder indexReqBuilder2 = mock(IndexRequestBuilder.class);
+        when(client.prepareIndex(index, type)).thenReturn(indexReqBuilder1, indexReqBuilder2);
+
+
+        // an elasticsearch storage
+        ElasticsearchStorage<FakeEntity> storage = new ElasticsearchStorage<>(
+                client,
+                mapper,
+                index,
+                type
+        );
+
+        // Entities
+        FakeEntity entity1 = new FakeEntity("123456789");
+        FakeEntity entity2 = new FakeEntity("987654321");
+
+
+        // WHEN
+        try {
+            // WHEN
+            storage.bulk(ImmutableList.of(entity1, entity2));
+            throw fail("should throw a StorageException");
+        } catch (StorageException e) {
+            // THEN
+            verify(client, times(2)).prepareIndex(index, type);
+
+            verify(indexReqBuilder1, times(1)).setId(entity1.getId());
+            verify(indexReqBuilder2, times(1)).setId(entity2.getId());
+            verify(indexReqBuilder1, times(1)).setSource(mapper.getTo().build(entity1));
+            verify(indexReqBuilder2, times(1)).setSource(mapper.getTo().build(entity2));
+            verify(indexReqBuilder1, times(0)).execute();
+            verify(indexReqBuilder2, times(0)).execute();
+
+            verify(bulkReqBuilder, times(1)).add(indexReqBuilder1);
+            verify(bulkReqBuilder, times(1)).add(indexReqBuilder2);
+            verify(bulkReqBuilder, times(1)).execute();
+        }
+    }
+
+
+
+    @Test
     public void shouldGetAnEntity() throws Exception {
         // GIVEN
         // a fake index, type name and id
@@ -486,7 +754,7 @@ public class ElasticsearchStorageTest {
         // when updating an entity, we have to mock the id check part
         // GET MOCKING:a mocked get response saying that entity exists
         GetResponse getResponse = mock(GetResponse.class);
-        when(getResponse.isExists()).thenReturn(true);
+        when(getResponse.isExists()).thenReturn(false);
 
         // GET MOCKING: a mocked get request builder
         ListenableActionFuture<GetResponse> getAction = mock(ListenableActionFuture.class);
@@ -494,6 +762,20 @@ public class ElasticsearchStorageTest {
         GetRequestBuilder getReqBuilder = mock(GetRequestBuilder.class);
         when(getReqBuilder.execute()).thenReturn(getAction);
         when(client.prepareGet(anyString(), anyString(), anyString())).thenReturn(getReqBuilder);
+
+        // when updating an entity, we have to mock the delete part
+        // DELETE MOCKING: a mocked delete response saying that entity has been deleted
+        DeleteResponse response = mock(DeleteResponse.class);
+        when(response.isFound()).thenReturn(true);
+
+        // DELETE MOCKING: a mocked delete request builder
+        ListenableActionFuture<DeleteResponse> action = mock(ListenableActionFuture.class);
+        when(action.actionGet()).thenReturn(response);
+        DeleteRequestBuilder deleteReqBuilder = mock(DeleteRequestBuilder.class);
+        when(deleteReqBuilder.execute()).thenReturn(action);
+
+        // a mocked elasticsearch client
+        when(client.prepareDelete(anyString(), anyString(), anyString())).thenReturn(deleteReqBuilder);
 
         // an elasticsearch storage
         ElasticsearchStorage<FakeEntity> storage = new ElasticsearchStorage<>(
@@ -510,6 +792,8 @@ public class ElasticsearchStorageTest {
         storage.update(entity);
 
         // THEN
+        verify(client, times(1)).prepareDelete(index, type, entity.getId());
+        verify(deleteReqBuilder, times(1)).execute();
         verify(client, times(1)).prepareIndex(index, type);
         verify(indexReqBuilder, times(1)).setId(entity.getId());
         verify(indexReqBuilder, times(1)).setSource(mapper.getTo().build(entity));
@@ -536,9 +820,9 @@ public class ElasticsearchStorageTest {
         when(client.prepareIndex(anyString(), anyString())).thenReturn(indexReqBuilder);
 
         // when updating an entity, we have to mock the id check part
-        // GET MOCKING:a mocked get response saying that entity exists
+        // GET MOCKING:a mocked get response saying that entity does not exists
         GetResponse getResponse = mock(GetResponse.class);
-        when(getResponse.isExists()).thenReturn(true);
+        when(getResponse.isExists()).thenReturn(false);
 
         // GET MOCKING: a mocked get request builder
         ListenableActionFuture<GetResponse> getAction = mock(ListenableActionFuture.class);
@@ -546,6 +830,18 @@ public class ElasticsearchStorageTest {
         GetRequestBuilder getReqBuilder = mock(GetRequestBuilder.class);
         when(getReqBuilder.execute()).thenReturn(getAction);
         when(client.prepareGet(anyString(), anyString(), anyString())).thenReturn(getReqBuilder);
+
+        // when updating an entity, we have to mock the delete part
+        // DELETE MOCKING: a mocked delete response saying that entity has been deleted
+        DeleteResponse response = mock(DeleteResponse.class);
+        when(response.isFound()).thenReturn(true);
+
+        // DELETE MOCKING: a mocked delete request builder
+        ListenableActionFuture<DeleteResponse> action = mock(ListenableActionFuture.class);
+        when(action.actionGet()).thenReturn(response);
+        DeleteRequestBuilder deleteReqBuilder = mock(DeleteRequestBuilder.class);
+        when(deleteReqBuilder.execute()).thenReturn(action);
+        when(client.prepareDelete(anyString(), anyString(), anyString())).thenReturn(deleteReqBuilder);
 
         // an elasticsearch storage
         ElasticsearchStorage<FakeEntity> storage = new ElasticsearchStorage<>(
@@ -562,6 +858,8 @@ public class ElasticsearchStorageTest {
         storage.update(entity, id);
 
         // THEN
+        verify(client, times(1)).prepareDelete(index, type, id);
+        verify(deleteReqBuilder, times(1)).execute();
         verify(client, times(1)).prepareIndex(index, type);
         verify(indexReqBuilder, times(1)).setId(id);
         verify(indexReqBuilder, times(1)).setSource(mapper.getTo().build(entity));
@@ -575,16 +873,16 @@ public class ElasticsearchStorageTest {
         String index = "fakeindex";
         String type = "faketype";
 
-        // GET MOCKING:a mocked get response saying that entity does not exist
-        GetResponse getResponse = mock(GetResponse.class);
-        when(getResponse.isExists()).thenReturn(false);
+        // DELETE MOCKING: a mocked delete response saying that entity does not exist
+        DeleteResponse deleteResponse = mock(DeleteResponse.class);
+        when(deleteResponse.isFound()).thenReturn(false);
 
-        // GET MOCKING: a mocked get request builder
-        ListenableActionFuture<GetResponse> getAction = mock(ListenableActionFuture.class);
-        when(getAction.actionGet()).thenReturn(getResponse);
-        GetRequestBuilder getReqBuilder = mock(GetRequestBuilder.class);
-        when(getReqBuilder.execute()).thenReturn(getAction);
-        when(client.prepareGet(anyString(), anyString(), anyString())).thenReturn(getReqBuilder);
+        // DELETE MOCKING: a mocked delete request builder
+        ListenableActionFuture<DeleteResponse> deleteAction = mock(ListenableActionFuture.class);
+        when(deleteAction.actionGet()).thenReturn(deleteResponse);
+        DeleteRequestBuilder deleteReqBuilder = mock(DeleteRequestBuilder.class);
+        when(deleteReqBuilder.execute()).thenReturn(deleteAction);
+        when(client.prepareDelete(anyString(), anyString(), anyString())).thenReturn(deleteReqBuilder);
 
         // an elasticsearch storage
         ElasticsearchStorage<FakeEntity> storage = new ElasticsearchStorage<>(
@@ -603,8 +901,8 @@ public class ElasticsearchStorageTest {
             throw fail("should throw a NotFoundException");
         } catch (NotFoundException e) {
             // THEN
-            verify(client, times(1)).prepareGet(index, type, entity.getId());
-            verify(getReqBuilder, times(1)).execute();
+            verify(client, times(1)).prepareDelete(index, type, entity.getId());
+            verify(deleteReqBuilder, times(1)).execute();
         }
     }
 
