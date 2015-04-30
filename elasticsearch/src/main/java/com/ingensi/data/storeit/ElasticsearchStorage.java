@@ -18,7 +18,10 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.search.SearchHit;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
