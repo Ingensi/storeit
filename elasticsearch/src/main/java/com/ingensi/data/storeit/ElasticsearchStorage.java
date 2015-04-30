@@ -78,12 +78,12 @@ public class ElasticsearchStorage<T extends StoredEntity> implements Storage<T> 
     }
 
     @Override
-    public void store(Collection<T> entityList) throws StorageException {
-        Map<String, T> entities = new HashMap<>();
-        for (T t : entityList) {
-            entities.put(t.getId(), t);
+    public void store(Collection<T> entities) throws StorageException {
+        Map<String, T> entitiesMap = new HashMap<>();
+        for (T t : entities) {
+            entitiesMap.put(t.getId(), t);
         }
-        store(entities);
+        store(entitiesMap);
     }
 
     @Override

@@ -53,11 +53,11 @@ public interface Storage<T extends StoredEntity> {
     /**
      * Bulk store new entities. The given entities ids will be used as IDs in the storage.
      *
-     * @param entityList The list of entities to store
+     * @param entities The collection of entities to store
      * @throws AlreadyExistsException If an ID already exists in the storage.
      * @throws StorageException       When another error appends.
      */
-    void store(Collection<T> entityList) throws StorageException;
+    void store(Collection<T> entities) throws StorageException;
 
     /**
      * Store new entity with custom id.
