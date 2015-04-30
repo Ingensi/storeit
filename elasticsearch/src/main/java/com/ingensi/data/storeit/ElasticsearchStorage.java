@@ -8,17 +8,20 @@ package com.ingensi.data.storeit;
 
 import com.ingensi.data.storeit.entities.StoredEntity;
 import com.ingensi.data.storeit.mapper.GenericMapper;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.search.SearchHit;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -78,6 +81,15 @@ public class ElasticsearchStorage<T extends StoredEntity> implements Storage<T> 
     }
 
     @Override
+    public void store(Collection<T> entities) throws StorageException {
+        Map<String, T> entitiesMap = new HashMap<>();
+        for (T t : entities) {
+            entitiesMap.put(t.getId(), t);
+        }
+        store(entitiesMap);
+    }
+
+    @Override
     public void store(T entity, String id) throws StorageException {
         if (!exists(id)) {
             IndexRequestBuilder requestBuilder = client.prepareIndex(index, type);
@@ -97,6 +109,16 @@ public class ElasticsearchStorage<T extends StoredEntity> implements Storage<T> 
         } else {
             throw new AlreadyExistsException("Unable to create entity with id " + id + " (already exists)");
         }
+    }
+
+    @Override
+    public void store(Map<String, T> entities) throws StorageException {
+        for (String id : entities.keySet()) {
+            if (exists(id)) {
+                throw new AlreadyExistsException("Unable to create entity with id " + id + " (already exists)");
+            }
+        }
+        bulkCreateOrUpdate(entities);
     }
 
     @Override
@@ -135,6 +157,29 @@ public class ElasticsearchStorage<T extends StoredEntity> implements Storage<T> 
 
         if (!response.isFound()) {
             throw new NotFoundException("Unable to delete entity with id " + id + " (not found)");
+        }
+    }
+
+    private void bulkCreateOrUpdate(Map<String, T> entities) throws StorageException {
+        BulkRequestBuilder bulkRequest = client.prepareBulk();
+
+        for (Map.Entry<String, T> entry : entities.entrySet()) {
+            String id = entry.getKey();
+            T entity = entry.getValue();
+
+            IndexRequestBuilder requestBuilder = client.prepareIndex(index, type);
+
+            if (id != null) {
+                requestBuilder.setId(id);
+            }
+            requestBuilder.setSource(mapper.getTo().build(entity));
+            bulkRequest.add(requestBuilder);
+
+        }
+
+        BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+        if (bulkResponse.hasFailures()) {
+            throw new InternalStorageException("Problem while bulk insert : " + bulkResponse.buildFailureMessage());
         }
     }
 
