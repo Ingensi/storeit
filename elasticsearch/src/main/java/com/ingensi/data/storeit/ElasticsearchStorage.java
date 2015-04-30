@@ -78,12 +78,12 @@ public class ElasticsearchStorage<T extends StoredEntity> implements Storage<T> 
     }
 
     @Override
-    public void bulk(List<T> entityList) throws StorageException {
+    public void store(Collection<T> entityList) throws StorageException {
         Map<String, T> entities = new HashMap<>();
         for (T t : entityList) {
             entities.put(t.getId(), t);
         }
-        bulk(entities);
+        store(entities);
     }
 
     @Override
@@ -109,7 +109,7 @@ public class ElasticsearchStorage<T extends StoredEntity> implements Storage<T> 
     }
 
     @Override
-    public void bulk(Map<String, T> entities) throws StorageException {
+    public void store(Map<String, T> entities) throws StorageException {
         for (String id : entities.keySet()) {
             if (exists(id)) {
                 throw new AlreadyExistsException("Unable to create entity with id " + id + " (already exists)");

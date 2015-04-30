@@ -9,7 +9,6 @@ package com.ingensi.data.storeit;
 import com.ingensi.data.storeit.entities.StoredEntity;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -58,7 +57,7 @@ public interface Storage<T extends StoredEntity> {
      * @throws AlreadyExistsException If an ID already exists in the storage.
      * @throws StorageException       When another error appends.
      */
-    void bulk(List<T> entityList) throws StorageException;
+    void store(Collection<T> entityList) throws StorageException;
 
     /**
      * Store new entity with custom id.
@@ -77,7 +76,7 @@ public interface Storage<T extends StoredEntity> {
      * @throws AlreadyExistsException If an ID already exists in the storage.
      * @throws StorageException       When another error appends.
      */
-    void bulk(Map<String, T> entities) throws StorageException;
+    void store(Map<String, T> entities) throws StorageException;
 
     /**
      * Get an entity from its ID.

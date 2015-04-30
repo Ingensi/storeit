@@ -442,7 +442,7 @@ public class ElasticsearchStorageTest {
 
 
         // WHEN
-        storage.bulk(ImmutableList.of(entity1, entity2));
+        storage.store(ImmutableList.of(entity1, entity2));
 
         // THEN
         verify(client, times(2)).prepareIndex(index, type);
@@ -511,7 +511,7 @@ public class ElasticsearchStorageTest {
         // WHEN
         String id1 = "id1";
         String id2 = "id2";
-        storage.bulk(ImmutableMap.of(id1, entity1, id2, entity2));
+        storage.store(ImmutableMap.of(id1, entity1, id2, entity2));
 
         // THEN
         verify(client, times(2)).prepareIndex(index, type);
@@ -570,7 +570,7 @@ public class ElasticsearchStorageTest {
 
         try {
             // WHEN
-            storage.bulk(ImmutableMap.of(id1, entity1, id2, entity2));
+            storage.store(ImmutableMap.of(id1, entity1, id2, entity2));
             throw fail("should throw a AlreadyExistsException");
         } catch (AlreadyExistsException e) {
             // THEN
@@ -634,7 +634,7 @@ public class ElasticsearchStorageTest {
         // WHEN
         try {
             // WHEN
-            storage.bulk(ImmutableList.of(entity1, entity2));
+            storage.store(ImmutableList.of(entity1, entity2));
             throw fail("should throw a StorageException");
         } catch (StorageException e) {
             // THEN
